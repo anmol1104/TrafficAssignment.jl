@@ -27,11 +27,11 @@ function djk(G, r)
 end
 
 """
-    tree(Lᵖ, r)
+    tree(Lᵖ)
 
 Returns tree rooted at node `r` given predecessor label `Lᵖ` (for node `r`)
 """
-function tree(Lᵖ, r)
+function tree(Lᵖ)
     T = Array{Int64,1}[[] for _ in N]
     for j in N
         i = Lᵖ[j]
