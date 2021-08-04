@@ -1,11 +1,12 @@
 """
-    djk(G, r)
+    djk(G, c, r)
 
 Djikstra's label setting algorithm
-Returns predecessor label `Lᵖ` for least cost paths from origin node `r` on graph `G`
+
+Returns predecessor label `Lᵖ` for least cost paths from origin node `r` on graph `G` with cost structure `c`
 """
-function djk(G, r)
-    N, A, C = G
+function djk(G::Graph, c, r)
+    N, A = G.N, G.A
     Lᵖ = [if i == r r else -1 end for i in N]           # Predecessor label
     Lᶜ = [if i == r 0.0 else Inf end for i in N]        # Cost label
     X = copy(N)                                         # Set of open nodes
@@ -14,9 +15,9 @@ function djk(G, r)
     deleteat!(X, i)
     while !isempty(X)
         for (k,j) in enumerate(A[i])
-            c = Lᶜ[i] + C[i][k]
-            if c < Lᶜ[j] && j ∈ X 
-                Lᵖ[j], Lᶜ[j] = i, c 
+            l = Lᶜ[i] + c[i][k]
+            if l < Lᶜ[j] && j ∈ X 
+                Lᵖ[j], Lᶜ[j] = i, l 
             end
         end
         index = argmin([Lᶜ[i] for i in X])
