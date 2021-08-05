@@ -1,9 +1,9 @@
 """
-    cᵢⱼ(i, k, x, method)
+    cₐ(i, k, x, method)
 
 Returns arc cost for arc `(i,j)` on graph `G` given arc flow `x` (`j = A[i][k]`)
 """
-function cᵢⱼ(G::Graph, i, k, x, assignment)
+function cₐ(G::Graph, i, k, x, assignment)
     α = G.α[i][k]
     β = G.β[i][k]
     tₒ= G.T[i][k]
@@ -22,11 +22,11 @@ function cᵢⱼ(G::Graph, i, k, x, assignment)
 end
 
 """
-    c′ᵢⱼ(i, k, x, method)
+    c′ₐ(i, k, x, method)
 
 Returns derivative of arc cost for arc `(i,j)` on graph `G` given arc flow `x` (`j = A[i][k]`)
 """
-function c′ᵢⱼ(G::Graph, i, k, x, assignment)
+function cₐ′(G::Graph, i, k, x, assignment)
     α = G.α[i][k]
     β = G.β[i][k]
     tₒ= G.T[i][k]
