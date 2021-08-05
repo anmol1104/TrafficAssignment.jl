@@ -30,9 +30,10 @@ end
 """
     tree(Lᵖ)
 
-Returns tree rooted at node `r` given predecessor label `Lᵖ` (for node `r`)
+Returns tree for graph `G` rooted at node `r` given predecessor label `Lᵖ` (for node `r`)
 """
-function tree(Lᵖ)
+function tree(G::Graph, Lᵖ)
+    N = G.N
     T = Array{Int64,1}[[] for _ in N]
     for j in N
         i = Lᵖ[j]
