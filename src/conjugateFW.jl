@@ -1,7 +1,7 @@
 """
-    conjugateFW(G::Graph; assignment=:UE, method=:pure, tol=1e-5, maxiters=20, maxruntime=300, log=:on)
+    conjugateFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
 
-Frank-Wolfe (conjugate) method for traffic assignment.
+Conjugate Frank-Wolfe method for traffic assignment.
 
 # Returns a named tuple with keys `:metadata`, `:report`, and `:output`
 - `metadata::String`  : Text defining the traffic assignment run 
@@ -9,16 +9,16 @@ Frank-Wolfe (conjugate) method for traffic assignment.
 - `output::DataFrame` : Flow and cost for every arc from the final iteration
 
 # Arguments
-- `G::Graph`                : Network structure as `Graph`
-- `assignment::Symbol=:UE`  : Assignment type; one of `:UE`, `:SO`
-- `tol::Float64=1e-5`       : Tolerance level for relative gap
-- `maxiters::Int64=20`      : Maximum number of iterations
-- `maxruntime::Int64=300`   : Maximum algorithm run time
+- `G::Graph`            : Network structure as `Graph`
+- `assignment::Symbol`  : Assignment type; one of `:UE`, `:SO`
+- `tol::Float64`        : Tolerance level for relative gap
+- `maxiters::Int64`     : Maximum number of iterations
+- `maxruntime::Int64`   : Maximum algorithm run time
 
 """
-function conjugateFW(G::Graph; assignment=:UE, tol=1e-5, maxiters=20, maxruntime=300, log=:on)
-    report = DataFrame(LOG₁₀RG = Float64[], TF = Float64[], TC = Float64[])
-    output = DataFrame(FROM = Int64[], TO = Int64[], FLOW = Float64[], COST = Float64[])
+function conjugateFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
+    report   = DataFrame(LOG₁₀RG = Float64[], TF = Float64[], TC = Float64[], RT = Float64[])
+    solution = DataFrame(FROM = Int64[], TO = Int64[], FLOW = Float64[], COST = Float64[])
 
     N, A, R, S, Q = G.N, G.A, G.R, G.S, G.Q                                         # Graph  
     x = [zeros(length(A[i])) for i in N]                                            # Arc flow
@@ -37,8 +37,8 @@ function conjugateFW(G::Graph; assignment=:UE, tol=1e-5, maxiters=20, maxruntime
 
     # Intialization
     tₒ = now() 
-    n = 1
-    for i in N for k in 1:length(A[i]) c[i][k] = cᵢⱼ(G, i, k, x[i][k], assignment) end end
+    n = 0
+    for i in N for k in 1:length(A[i]) c[i][k] = cₐ(G, i, k, x[i][k], assignment) end end
     for r in R
         Lᵖ[r] = djk(G, c, r)
         for s in S[r]
@@ -47,7 +47,7 @@ function conjugateFW(G::Graph; assignment=:UE, tol=1e-5, maxiters=20, maxruntime
             for (m,i) in enumerate(pᵣₛ[1:end-1])
                 k = findfirst(x -> (x == pᵣₛ[m+1]), A[i])::Int64
                 x[i][k] += qᵣₛ
-                c[i][k] = cᵢⱼ(G, i, k, x[i][k], assignment)
+                c[i][k] = cₐ(G, i, k, x[i][k], assignment)
             end
         end
     end
@@ -55,28 +55,22 @@ function conjugateFW(G::Graph; assignment=:UE, tol=1e-5, maxiters=20, maxruntime
     # Iterate
     while true
         num , den = 0.0, 0.0
-        for i in N for k in 1:length(A[i]) c[i][k] = cᵢⱼ(G, i, k, x[i][k], assignment) end end
+        for i in N for k in 1:length(A[i]) c[i][k] = cₐ(G, i, k, x[i][k], assignment) end end
         for r in R Lᵖ[r] = djk(G, c, r) end
         for r in R for s in S[r] num += Q[r,s] * cₑ(G, c, path(Lᵖ[r], r, s)) end end
         for i in N for k in 1:length(A[i]) den += x[i][k] * c[i][k] end end
         rg = 1 - num/den
-
-        push!(report[!, :LOG₁₀RG], log10(abs(rg)))
-        push!(report[!, :TF], sum(sum.(x)))
-        push!(report[!, :TC], den)
-
+        
         tₙ = now()
         runtime = (tₙ - tₒ).value/1000
+        
+        push!(report, [log10(abs(rg)), sum(sum.(x)), den, runtime])
 
         if log == :on
-            if n < 10 
-                @printf("\n #%02i   | %.3e | %.5e | %.5e | %.3f ", n, log10(abs(rg)), sum(sum.(x)), den, runtime)
-            else 
-                @printf("\n #%.0f   | %.3E | %.5E | %.5E | %.3f ", n, log10(abs(rg)), sum(sum.(x)), den, runtime) 
-            end
+            @printf("\n #%02i   | %.3e | %.5e | %.5e | %.3f ", n, log10(abs(rg)), sum(sum.(x)), den, runtime)
         end
 
-        if rg ≤ tol || n ≥ maxiters || runtime ≥ maxruntime break end
+        if rg ≤ tol || n + 1 ≥ maxiters || runtime ≥ maxruntime break end
 
         n += 1
 
@@ -101,7 +95,7 @@ function conjugateFW(G::Graph; assignment=:UE, tol=1e-5, maxiters=20, maxruntime
         num, den = 0.0, 0.0
         for i in N
             for k in 1:length(A[i])
-                H = derivative(x -> cᵢⱼ(G, i, k, x, assignment), x[i][k])
+                H = derivative(x -> cₐ(G, i, k, x, assignment), x[i][k])
                 num += (pₙ₋₁[i][k] - xₙ[i][k]) * H * (yₙ[i][k] - xₙ[i][k])
                 den += (pₙ₋₁[i][k] - xₙ[i][k]) * H * (yₙ[i][k] - pₙ₋₁[i][k])
             end
@@ -122,7 +116,7 @@ function conjugateFW(G::Graph; assignment=:UE, tol=1e-5, maxiters=20, maxruntime
         α = (l + u)/2
         while abs(u-l) ≥ ε
             v = 0.0
-            for i in N for k in 1:length(A[i]) v += cᵢⱼ(G, i, k, x[i][k] + α * d[i][k], assignment) * d[i][k] end end
+            for i in N for k in 1:length(A[i]) v += cₐ(G, i, k, x[i][k] + α * d[i][k], assignment) * d[i][k] end end
             if v < 0.0 l = α
             elseif v > 0.0 u = α
             else break
@@ -136,19 +130,12 @@ function conjugateFW(G::Graph; assignment=:UE, tol=1e-5, maxiters=20, maxruntime
         push!(P, p)
     end
 
-    for i in N
-        for k in 1:length(A[i])
-            push!(output[!, :FROM], i)
-            push!(output[!, :TO], A[i][k])
-            push!(output[!, :FLOW], x[i][k])
-            push!(output[!, :COST], c[i][k])
-        end
-    end
+    for i in N for k in 1:length(A[i]) push!(solution, [i, A[i][k], x[i][k], c[i][k]]) end end
 
     metadata =  "MetaData
     Network     => $(G.name)
     assignment  => $(String(assignment))
     method      => Conjugate Frank-Wolfe"
     
-    return (metadata = metadata, report = report, output = output)
+    return (metadata = metadata, report = report, solution = solution)
 end
