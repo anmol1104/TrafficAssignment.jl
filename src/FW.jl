@@ -35,7 +35,7 @@ function FW(G::Graph, assignment, tol, maxiters, maxruntime, log)
         print("\n ------|------------|-------------|-------------|--------")
     end
 
-    # Intialization
+    # Intializate
     tₒ = now() 
     n = 0
     for i in N for k in 1:length(A[i]) c[i][k] = cₐ(G, i, k, x[i][k], assignment) end end
