@@ -3,7 +3,8 @@
 
 Frank-Wolfe method for traffic assignment.
 
-# Returns a named tuple with keys `:metadata`, `:report`, and `:output`
+# Returns
+a named tuple with keys `:metadata`, `:report`, and `:output`
 - `metadata::String`  : Text defining the traffic assignment run 
 - `report::DataFrame` : A log of total network flow, total network cost, and run time for every iteration
 - `output::DataFrame` : Flow and cost for every arc from the final iteration
@@ -13,7 +14,7 @@ Frank-Wolfe method for traffic assignment.
 - `assignment::Symbol`  : Assignment type; one of `:UE`, `:SO`
 - `tol::Float64`        : Tolerance level for relative gap
 - `maxiters::Int64`     : Maximum number of iterations
-- `maxruntime::Int64`   : Maximum algorithm run time
+- `maxruntime::Int64`   : Maximum algorithm run time (seconds)
 """
 function FW(G::Graph, assignment, tol, maxiters, maxruntime, log)
     report   = DataFrame(LOG₁₀RG = Float64[], TF = Float64[], TC = Float64[], RT = Float64[])
