@@ -70,7 +70,7 @@ function conjugateFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
             @printf("\n #%02i   | %.3e | %.5e | %.5e | %.3f ", n, log10(abs(rg)), sum(sum.(x)), den, runtime)
         end
 
-        if rg ≤ tol || n + 1 ≥ maxiters || runtime ≥ maxruntime break end
+        if rg ≤ tol || n ≥ maxiters || runtime ≥ maxruntime break end
 
         n += 1
 
@@ -95,7 +95,7 @@ function conjugateFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
         num, den = 0.0, 0.0
         for i in N
             for k in 1:length(A[i])
-                H = derivative(x -> cₐ(G, i, k, x, assignment), x[i][k])
+                H = cₐ′(G, i, k, x[i][k], assignment)
                 num += (pₙ₋₁[i][k] - xₙ[i][k]) * H * (yₙ[i][k] - xₙ[i][k])
                 den += (pₙ₋₁[i][k] - xₙ[i][k]) * H * (yₙ[i][k] - pₙ₋₁[i][k])
             end
@@ -126,8 +126,8 @@ function conjugateFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
         
         # Update
         for i in N for k in 1:length(A[i]) x[i][k] += α * d[i][k] end end
-        push!(Y, y)
-        push!(P, p)
+        push!(Y, deepcopy(y))
+        push!(P, deepcopy(p))
     end
 
     for i in N for k in 1:length(A[i]) push!(solution, [i, A[i][k], x[i][k], c[i][k]]) end end

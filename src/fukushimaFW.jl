@@ -70,7 +70,7 @@ function fukushimaFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
             @printf("\n #%02i   | %.3e | %.5e | %.5e | %.3f ", n, log10(abs(rg)), sum(sum.(x)), den, runtime)
         end
         
-        if rg ≤ tol || n + 1 ≥ maxiters || runtime ≥ maxruntime break end
+        if rg ≤ tol || n ≥ maxiters || runtime ≥ maxruntime break end
 
         n += 1
 
@@ -92,7 +92,7 @@ function fukushimaFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
         yₙ = y
         yₙ₋₁ = n == 1 ? yₙ : Y[n-1]
         for i in N for k in 1:length(A[i]) p[i][k] = λ * yₙ₋₁[i][k] + (1 - λ) * yₙ[i][k] end end
-        
+
         # Seach direction
         for i in N for k in 1:length(A[i]) d[i][k] = p[i][k] - x[i][k] end end
         
@@ -110,11 +110,11 @@ function fukushimaFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
             end
             α = (l + u)/2
         end
-        
+
         # Update
         for i in N for k in 1:length(A[i]) x[i][k] += α * d[i][k] end end
-        push!(Y, y)
-        push!(P, p)
+        push!(Y, deepcopy(y))
+        push!(P, deepcopy(p))
     end
 
     for i in N for k in 1:length(A[i]) push!(solution, [i, A[i][k], x[i][k], c[i][k]]) end end
