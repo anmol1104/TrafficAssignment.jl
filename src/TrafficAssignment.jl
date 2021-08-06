@@ -2,9 +2,11 @@ module TrafficAssignment
 
 using CSV
 using DataFrames
-using Calculus
 using Dates
 using Printf
+using Plots
+
+
 
 struct Graph
     name::String                            # Network name
@@ -20,6 +22,8 @@ struct Graph
     Q::Dict{Tuple{Int64, Int64}, Float64}   # Collection of flow mapped to origin-destination pair (one to one mapping - r,s => qᵣₛ; qᵣₛ ≠ 0)
 end
 
+
+
 include("build.jl")
 include("segment.jl")
 include("djk.jl")
@@ -27,25 +31,28 @@ include("FW.jl")
 include("fukushimaFW.jl")
 include("conjugateFW.jl")
 
+
+
 """
-    assigntraffic(network, method, assignment, tol, maxiters, maxruntime, log)
+    assigntraffic(network; method=:FW, assignment=:UE, tol=1e-5, maxiters=20, maxruntime=300, log=:off)
 
 Fukushima Frank-Wolfe method for traffic assignment.
 
-# Returns a named tuple with keys `:metadata`, `:report`, and `:output`
+# Returns
+a named tuple with keys `:metadata`, `:report`, and `:output`
 - `metadata::String`  : Text defining the traffic assignment run 
 - `report::DataFrame` : A log of total network flow, total network cost, and run time for every iteration
 - `output::DataFrame` : Flow and cost for every arc from the final iteration
 
 # Arguments
-- `network::String`     : Network
-- `method::Symbol`      : One of `:FW`, `:fukushimaFW`, `:conjugateFW`
-- `assignment::Symbol`  : Assignment type; one of `:UE`, `:SO`
-- `tol::Float64`        : Tolerance level for relative gap
-- `maxiters::Int64`     : Maximum number of iterations
-- `maxruntime::Int64`   : Maximum algorithm run time
+- `network::String`         : Network
+- `method::Symbol=:FW`      : One of `:FW`, `:fukushimaFW`, `:conjugateFW`
+- `assignment::Symbol=:UE`  : Assignment type; one of `:UE`, `:SO`
+- `tol::Float64=1e-5`       : Tolerance level for relative gap
+- `maxiters::Int64=20`      : Maximum number of iterations
+- `maxruntime::Int64=300`   : Maximum algorithm run time (seconds)
 """
-function assigntraffic(network; method=:FW, assignment=:UE, tol=1e-5, maxiters=20, maxruntime=300, log=:on)
+function assigntraffic(network; method=:FW, assignment=:UE, tol=1e-5, maxiters=20, maxruntime=300, log=:off)
     G = build(network)
     if method == :FW  return FW(G, assignment, tol, maxiters, maxruntime, log)
     elseif method == :fukushimaFW return fukushimaFW(G, assignment, tol, maxiters, maxruntime, log)
@@ -53,6 +60,27 @@ function assigntraffic(network; method=:FW, assignment=:UE, tol=1e-5, maxiters=2
     else return (metadata="", report=DataFrame(), output=DataFrame())
     end
 end
+
+
+
+"""
+    compare(network; methods, assignment=:UE, tol=1e-5, maxiters=20, maxruntime=300, log=:on)
+
+Compare assignment methods.
+"""
+function compare(network; methods, assignment=:UE, tol=1e-5, maxiters=20, maxruntime=300, log=:on)
+    fig = plot()
+    
+    G = build(network)
+    for method in methods
+        _, report, = assigntraffic(network; method=method, assignment=assignment, tol=tol, maxiters=maxiters, maxruntime=maxruntime, log=log)
+        y = report[!,:LOG₁₀RG]
+        x = 0:length(y)-1
+        plot!(x,y, label=String(method))
+    end
+    display(fig)
+end
+
 
 
 """
@@ -99,7 +127,7 @@ export assigntraffic
 end
 #= ────────────────────────────────────────────────────────────────────────────────
 # TODO
-1. Complete tests for Frank Wolfe
-2. Add compare.jl
-3. Check for possibilities of multi-threading
+1. Complete tests
+2. Check performance of conjugate fw againts pure fw and fukushima fw
+3. Add tapas
 ──────────────────────────────────────────────────────────────────────────────── =#
