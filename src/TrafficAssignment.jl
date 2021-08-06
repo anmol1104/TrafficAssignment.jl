@@ -25,11 +25,11 @@ end
 
 
 include("build.jl")
-include("segment.jl")
-include("djk.jl")
+include("auxfunc.jl")
 include("FW.jl")
 include("fukushimaFW.jl")
 include("conjugateFW.jl")
+include("tapas.jl")
 
 
 
@@ -130,4 +130,5 @@ end
 1. Complete tests
 2. Check performance of conjugate fw againts pure fw and fukushima fw
 3. Add tapas
+4. Test tapas against benchmarks from Xie, Nie and Liu (2018) - A greedy path based algorithm
 ──────────────────────────────────────────────────────────────────────────────── =#
