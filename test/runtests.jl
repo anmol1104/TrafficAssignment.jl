@@ -5,7 +5,12 @@ using CSV
 using DataFrames
 using BenchmarkTools
 
+assigntraffic("Anaheim", method=:FW, assignment=:UE, tol=1e-5, maxiters=20, maxruntime=300, log=:on)
+@benchmark assigntraffic("Anaheim", method=:FW, assignment=:UE, tol=1e-5, maxiters=20, maxruntime=300, log=:off)
 
+#TrafficAssignment.compare("Anaheim", methods=[:FW, :fukushimaFW, :conjugateFW])
+
+#=
 testnetworks = ["Anaheim", "SiouxFalls"]
 @testset "FW.jl" begin
     for network in testnetworks
@@ -16,3 +21,4 @@ testnetworks = ["Anaheim", "SiouxFalls"]
         @test rg₁ ≤ rg₂
     end
 end
+=#
