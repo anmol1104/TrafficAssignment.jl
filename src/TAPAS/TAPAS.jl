@@ -1,4 +1,4 @@
-module TrafficAssignment
+module TAPAS
 
 using CSV
 using DataFrames
@@ -33,6 +33,7 @@ mutable struct Arc
     xʳ::Vector{Float64}                     # Origin based arc flow
     c::Float64                              # Arc cost
 end
+# TODO: Add c' to arc struct ?
 
 mutable struct Segment
     s::Vector{Arc}                          # Segment
@@ -63,9 +64,3 @@ include("TA.jl")
 export itapas
 
 end
-
-#= ────────────────────────────────────────────────────────────────────────────────
-# TODO
-1. Make arc and segment struct immutable
-2. Test tapas against benchmarks from Xie, Nie and Liu (2018) - A greedy path based algorithm
-──────────────────────────────────────────────────────────────────────────────── =#
