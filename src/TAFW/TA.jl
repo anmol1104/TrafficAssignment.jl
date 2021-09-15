@@ -19,8 +19,6 @@ function FW(G::Graph, tol, maxiters, maxruntime, log)
     report   = DataFrame(LOG₁₀RG = Float64[], TF = Float64[], TC = Float64[], RT = Float64[])
     solution = DataFrame(FROM = Int64[], TO = Int64[], FLOW = Float64[], COST = Float64[])
     
-    assignment = ϕ == false ? :UE : :SO
-    
     N, A, K, O = G.N, G.A, G.K, G.O                                         # Graph  
     R  = [o.n for o in O]                                                   # Origin nodes
     y  = zeros(length(A))                                                   # Auxiliary arc flow
@@ -145,6 +143,8 @@ function FW(G::Graph, tol, maxiters, maxruntime, log)
         push!(solution, z) 
     end
     
+    assignment = A[begin].ϕ == false ? :UE : :SO
+    
     metadata = "MetaData
     Network     => $(G.name)
     assignment  => $(String(assignment))
@@ -175,8 +175,6 @@ a named tuple with keys `:metadata`, `:report`, and `:output`
 function fukushimaFW(G::Graph, tol, maxiters, maxruntime, log)
     report   = DataFrame(LOG₁₀RG = Float64[], TF = Float64[], TC = Float64[], RT = Float64[])
     solution = DataFrame(FROM = Int64[], TO = Int64[], FLOW = Float64[], COST = Float64[])
-
-    assignment = ϕ == false ? :UE : :SO
 
     N, A, K, O = G.N, G.A, G.K, G.O                                         # Graph
     R  = [o.n for o in O]                                                   # Origin nodes
@@ -305,6 +303,8 @@ function fukushimaFW(G::Graph, tol, maxiters, maxruntime, log)
         push!(solution, z) 
     end
 
+    assignment = A[begin].ϕ == false ? :UE : :SO
+    
     metadata =  "MetaData
     Network     => $(G.name)
     assignment  => $(String(assignment))
@@ -336,8 +336,6 @@ function conjugateFW(G::Graph, tol, maxiters, maxruntime, log)
     report   = DataFrame(LOG₁₀RG = Float64[], TF = Float64[], TC = Float64[], RT = Float64[])
     solution = DataFrame(FROM = Int64[], TO = Int64[], FLOW = Float64[], COST = Float64[])
 
-    assignment = ϕ == false ? :UE : :SO
-    
     N, A, K, O = G.N, G.A, G.K, G.O                                         # Graph
     R  = [o.n for o in O]                                                   # Origin nodes
     y  = zeros(length(A))                                                   # Auxiliary arc flow
@@ -473,6 +471,8 @@ function conjugateFW(G::Graph, tol, maxiters, maxruntime, log)
         z .= a.t.v, a.h.v, a.x, a.c
         push!(solution, z) 
     end
+
+    assignment = A[begin].ϕ == false ? :UE : :SO
 
     metadata =  "MetaData
     Network     => $(G.name)
