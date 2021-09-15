@@ -29,17 +29,17 @@ a named tuple with keys `:metadata`, `:report`, and `:output`
 """
 function assigntraffic(network; method=:FW, assignment=:UE, tol=1e-5, maxiters=20, maxruntime=300, log=:off)
     if method == :FW  
-        G = TAFW.build(network)
-        return FW(G, assignment, tol, maxiters, maxruntime, log)
+        G = TAFW.build(network, assignment)
+        return FW(G, tol, maxiters, maxruntime, log)
     elseif method == :fukushimaFW 
-        G = TAFW.build(network)
-        return fukushimaFW(G, assignment, tol, maxiters, maxruntime, log)
+        G = TAFW.build(network, assignment)
+        return fukushimaFW(G, tol, maxiters, maxruntime, log)
     elseif method == :conjugateFW 
-        G = TAFW.build(network)
-        return conjugateFW(G, assignment, tol, maxiters, maxruntime, log)
+        G = TAFW.build(network, assignment)
+        return conjugateFW(G, tol, maxiters, maxruntime, log)
     elseif method == :TAPAS
-        G = TAPAS.build(network)
-        return itapas(G, assignment, tol, maxiters, maxruntime, log)
+        G = TAPAS.build(network, assignment)
+        return itapas(G, tol, maxiters, maxruntime, log)
     else return (metadata="", report=DataFrame(), solution=DataFrame())
     end
 end

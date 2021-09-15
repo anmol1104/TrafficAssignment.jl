@@ -3,55 +3,41 @@
 """
     cₐ(a::Arc, x=a.x)
 
-Returns arc cost for `a::Arc` for arc flow `x`
+Returns arc cost for arc `a` for arc flow `x`
 """
-function cₐ(a::Arc, x=a.x)
+function cₐ(a::Arc, x=sum(a.xʳ))
     tₒ= a.tₒ
     α = a.α
     β = a.β
     V = a.V
+    ϕ = a.ϕ
 
     t = tₒ * (1 + α * (x/V) ^ β)
-
-    c = t
+    t′= ϕ == 0 || β == 0 ? 0.0 : tₒ * α * β * (x ^ (β - 1))/(V ^ β)
+    
+    c = t + ϕ * x * t′
     return c
 end
 
 """
     cₐ′(a::Arc, x=a.x)
 
-Returns first derivative of arc cost wrt arc flow for `a::Arc` at arc flow `x`
+Returns first derivative of arc cost wrt arc flow for arc `a` at arc flow `x`
 """
-function cₐ′(a::Arc, x=a.x)
+function cₐ′(a::Arc, x=sum(a.xʳ))
     tₒ= a.tₒ
     α = a.α
     β = a.β
     V = a.V
+    ϕ = a.ϕ
 
     t′= β == 0 ? 0.0 : tₒ * α * β * (x ^ (β - 1))/(V ^ β)
-
-    c′ = t′
+    t″ = ϕ == 0 || β == 0 || β == 1 ?  0.0 : tₒ * α * β * (β - 1) * (x ^ (β - 2))/(V ^ β)
+    
+    c′ = t′ + ϕ * x * t″
     return c′
 end
 
-
-"""
-    cₐ″(a::Arc, x=a.x)
-
-Returns second derivative of arc cost wrt arc flow for `a::Arc` at arc flow `x`
-"""
-function cₐ″(a::Arc, x=a.x)
-    tₒ= a.tₒ
-    α = a.α
-    β = a.β
-    x = a.x
-    V = a.V
-
-    t″ = β == 0 || β == 1 ?  0.0 : tₒ * α * β * (β - 1) * (x ^ (β - 2))/(V ^ β)
-
-    c″ = t″
-    return c″
-end
 
 
 # Djikstra functions ────────────────────────────────────────────────────────────────────────────────

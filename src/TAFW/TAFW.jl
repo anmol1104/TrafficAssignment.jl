@@ -29,6 +29,7 @@ mutable struct Arc
     β::Float64                              # BPR parameter
     x::Float64                              # Arc flow
     c::Float64                              # Arc cost
+    ϕ::Bool                                 # Assignment boolean (UE => ϕ = false; SO => ϕ = true)
 end
 
 struct Graph

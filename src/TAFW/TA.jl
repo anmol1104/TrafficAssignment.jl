@@ -1,5 +1,5 @@
 """
-    FW(G::Graph, assignment, tol, maxiters, maxruntime, log)
+    FW(G::Graph, tol, maxiters, maxruntime, log)
 
 Frank-Wolfe method for traffic assignment.
 
@@ -11,16 +11,15 @@ a named tuple with keys `:metadata`, `:report`, and `:output`
 
 # Arguments
 - `G::Graph`            : Network structure as `Graph`
-- `assignment::Symbol`  : Assignment type; one of `:UE`, `:SO`
 - `tol::Float64`        : Tolerance level for relative gap
 - `maxiters::Int64`     : Maximum number of iterations
 - `maxruntime::Int64`   : Maximum algorithm run time (seconds)
 """
-function FW(G::Graph, assignment, tol, maxiters, maxruntime, log)
+function FW(G::Graph, tol, maxiters, maxruntime, log)
     report   = DataFrame(LOG₁₀RG = Float64[], TF = Float64[], TC = Float64[], RT = Float64[])
     solution = DataFrame(FROM = Int64[], TO = Int64[], FLOW = Float64[], COST = Float64[])
     
-    ϕ = assignment == :UE ? false : true
+    assignment = ϕ == false ? :UE : :SO
     
     N, A, K, O = G.N, G.A, G.K, G.O                                         # Graph  
     R  = [o.n for o in O]                                                   # Origin nodes
@@ -157,7 +156,7 @@ end
 
 
 """
-    fukushimaFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
+    fukushimaFW(G::Graph, tol, maxiters, maxruntime, log)
 
 Fukushima Frank-Wolfe method for traffic assignment.
 
@@ -169,16 +168,15 @@ a named tuple with keys `:metadata`, `:report`, and `:output`
 
 # Arguments
 - `G::Graph`            : Network structure as `Graph`
-- `assignment::Symbol`  : Assignment type; one of `:UE`, `:SO`
 - `tol::Float64`        : Tolerance level for relative gap
 - `maxiters::Int64`     : Maximum number of iterations
 - `maxruntime::Int64`   : Maximum algorithm run time (seconds)
 """
-function fukushimaFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
+function fukushimaFW(G::Graph, tol, maxiters, maxruntime, log)
     report   = DataFrame(LOG₁₀RG = Float64[], TF = Float64[], TC = Float64[], RT = Float64[])
     solution = DataFrame(FROM = Int64[], TO = Int64[], FLOW = Float64[], COST = Float64[])
 
-    ϕ = assignment == :UE ? false : true
+    assignment = ϕ == false ? :UE : :SO
 
     N, A, K, O = G.N, G.A, G.K, G.O                                         # Graph
     R  = [o.n for o in O]                                                   # Origin nodes
@@ -318,7 +316,7 @@ end
 
 
 """
-    conjugateFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
+    conjugateFW(G::Graph, tol, maxiters, maxruntime, log)
 
 Conjugate Frank-Wolfe method for traffic assignment.
 
@@ -330,16 +328,15 @@ a named tuple with keys `:metadata`, `:report`, and `:output`
 
 # Arguments
 - `G::Graph`            : Network structure as `Graph`
-- `assignment::Symbol`  : Assignment type; one of `:UE`, `:SO`
 - `tol::Float64`        : Tolerance level for relative gap
 - `maxiters::Int64`     : Maximum number of iterations
 - `maxruntime::Int64`   : Maximum algorithm run time (seconds)
 """
-function conjugateFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
+function conjugateFW(G::Graph, tol, maxiters, maxruntime, log)
     report   = DataFrame(LOG₁₀RG = Float64[], TF = Float64[], TC = Float64[], RT = Float64[])
     solution = DataFrame(FROM = Int64[], TO = Int64[], FLOW = Float64[], COST = Float64[])
 
-    ϕ = assignment == :UE ? false : true
+    assignment = ϕ == false ? :UE : :SO
     
     N, A, K, O = G.N, G.A, G.K, G.O                                         # Graph
     R  = [o.n for o in O]                                                   # Origin nodes
@@ -358,7 +355,7 @@ function conjugateFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
     # Intializate
     tₒ = now() 
     n = 0
-    for a in A a.c = cₐ(a) + ϕ * a.x * cₐ′(a) end
+    for a in A a.c = cₐ(a) end
     for (i,o) in enumerate(O)
         r = o.n
         Lᵖ[i] = djk(G, o)
@@ -368,7 +365,7 @@ function conjugateFW(G::Graph, assignment, tol, maxiters, maxruntime, log)
             pᵣₛ = path(G, L, r, s)
             for a in pᵣₛ
                 a.x += qᵣₛ
-                a.c = cₐ(a) + ϕ * a.x * cₐ′(a)
+                a.c = cₐ(a)
             end
         end
     end
