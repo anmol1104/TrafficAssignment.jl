@@ -71,7 +71,8 @@ end
 Returns relative gap for `network` given traffic assignment `solution`.
 """
 function getrg(network, solution::DataFrame)
-    G = build(network)
+    build, djk, path = TAFW.build, TAFW.djk, TAFW.path  # NOTE: Can chose any assignment method tools to calculate relative gap
+    G = build(network, :none)
     N, A, O, K = G.N, G.A, G.O, G.K
     
     for row in 1:nrow(solution)
@@ -92,7 +93,7 @@ function getrg(network, solution::DataFrame)
         for (j,s) in enumerate(o.S)
             qᵣₛ = o.Q[j]
             pᵣₛ = path(G, Lᵖ, r, s)
-            num += qᵣₛ * cₚ(pᵣₛ)
+            for a in pᵣₛ num += qᵣₛ * a.c end
         end 
     end
 
