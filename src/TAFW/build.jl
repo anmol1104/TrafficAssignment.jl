@@ -13,7 +13,7 @@ function build(network, assignment)
     ϕ = assignment == :UE ? false : true
 
     # network file
-    ntwkfile = joinpath(@__DIR__, "Network\\$network\\network.csv")
+    ntwkfile = joinpath(@__DIR__, "Network/$network/network.csv")
     csv₁ = CSV.File(ntwkfile, types=[Int64, Int64, Float64, Float64, Float64, Float64, Float64])
     df₁ = DataFrame(csv₁)
     tail = df₁[!, 1]::Array{Int64,1}
@@ -25,7 +25,7 @@ function build(network, assignment)
     beta = df₁[!, 7]::Array{Float64,1}
 
     # demand file
-    dmndfile = joinpath(@__DIR__, "Network\\$network\\demand.csv")
+    dmndfile = joinpath(@__DIR__, "Network/$network/demand.csv")
     csv₂ = CSV.File(dmndfile)
     df₂ = DataFrame(csv₂)
     origin = df₂[!, 1]::Array{Int64,1}

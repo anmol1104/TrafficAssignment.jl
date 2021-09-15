@@ -107,9 +107,4 @@ end
 export assigntraffic
 
 end
-#= ────────────────────────────────────────────────────────────────────────────────
-# TODO:
-1. Finish jobs in FW
-2. Complete TAPAS
-3. Complete tests
-──────────────────────────────────────────────────────────────────────────────── =#
+# TODO: Save output from traffic assignment solution
