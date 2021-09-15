@@ -1,7 +1,7 @@
 module TrafficAssignment
 
-include("TAFW\\TAFW.jl")
-include("TAPAS\\TAPAS.jl")
+include("TAFW/TAFW.jl")
+include("TAPAS/TAPAS.jl")
 
 using .TAFW
 using .TAPAS
