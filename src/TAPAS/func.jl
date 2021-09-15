@@ -3,54 +3,75 @@
 """
     cₐ(a::Arc, x=a.x)
 
-Returns arc cost for `a::Arc` for arc flow `x`
+Returns arc cost for arc `a` for arc flow `x`
 """
-function cₐ(a::Arc, x=a.x)
+function cₐ(a::Arc, x=sum(a.xʳ))
     tₒ= a.tₒ
     α = a.α
     β = a.β
     V = a.V
+    ϕ = a.ϕ
 
     t = tₒ * (1 + α * (x/V) ^ β)
-
-    c = t
+    t′= ϕ == 0 || β == 0 ? 0.0 : tₒ * α * β * (x ^ (β - 1))/(V ^ β)
+    
+    c = t + ϕ * x * t′
     return c
 end
 
 """
     cₐ′(a::Arc, x=a.x)
 
-Returns first derivative of arc cost wrt arc flow for `a::Arc` at arc flow `x`
+Returns first derivative of arc cost wrt arc flow for arc `a` at arc flow `x`
 """
-function cₐ′(a::Arc, x=a.x)
+function cₐ′(a::Arc, x=sum(a.xʳ))
     tₒ= a.tₒ
     α = a.α
     β = a.β
     V = a.V
+    ϕ = a.ϕ
 
     t′= β == 0 ? 0.0 : tₒ * α * β * (x ^ (β - 1))/(V ^ β)
-
-    c′ = t′
+    t″ = ϕ == 0 || β == 0 || β == 1 ?  0.0 : tₒ * α * β * (β - 1) * (x ^ (β - 2))/(V ^ β)
+    
+    c′ = t′ + ϕ * x * t″
     return c′
 end
 
 
+# Segment functions ────────────────────────────────────────────────────────────────────────────────
 """
-    cₐ″(a::Arc, x=a.x)
+    cₑ(e::Vector{Arc})
 
-Returns second derivative of arc cost wrt arc flow for `a::Arc` at arc flow `x`
+Returns segment cost for segment `e`
 """
-function cₐ″(a::Arc, x=a.x)
-    tₒ= a.tₒ
-    α = a.α
-    β = a.β
-    x = a.x
-    V = a.V
+function cₑ(e::Vector{Arc})
+    c = 0.0
+    for a in e c += a.c end
+    return c
+end
 
-    t″ = β == 0 || β == 1 ?  0.0 : tₒ * α * β * (β - 1) * (x ^ (β - 2))/(V ^ β)
+"""
+    cₑ′(e::Vector{Arc})
 
-    c″ = t″
-    return c″
+Returns first derivative of segment cost for segment `e`
+"""
+function cₑ′(e::Vector{Arc})
+    c′ = 0.0
+    for a in e c′ += a.c′ end
+    return c′
+end
+
+"""
+    fₑ(e::Vector{Arc}, o::Origin)
+
+Return minimum flow on segment `e` from origin `o`
+"""
+function fₑ(e::Vector{Arc}, o::Origin)
+    f = Inf
+    k = o.k
+    for a in e if a.xʳ[k] < f f = a.xʳ[k] end end
+    return f
 end
 
 
@@ -60,9 +81,8 @@ end
 """
     djk(G::Graph, o::Origin)
 
-Djikstra's label setting algorithm
-
-Returns predecessor arc label (index in vector `A`) `Lᵖ` for least cost paths from origin `o` on graph `G`
+Djikstra's label setting algorithm.
+Returns predecessor arc label (index in vector `A`) `Lᵖ` for least cost paths from origin `o` on graph `G`.
 """
 function djk(G::Graph, o::Origin)
     N = G.N
@@ -86,7 +106,7 @@ function djk(G::Graph, o::Origin)
             k = K[i,j]
             a = A[k]
             l = Lᶜ[i] + a.c
-            if l ≤ Lᶜ[j] Lᵖ[j], Lᶜ[j] = k, l 
+            if l < Lᶜ[j] && N[j] ∈ X Lᵖ[j], Lᶜ[j] = k, l 
             end
         end
         index = argmin([Lᶜ[n.v] for n in X])
@@ -145,8 +165,11 @@ path(G::Graph, o::Origin, s::Node) = path(G, o.Lᵖ, o.n, s)  # Shorter version
 
 # ────────────────────────────────────────────────────────────────────────────────
 
+"""
+    ispotential(a::Arc, o::Origin, G::Graph)
 
-# Identfies if arc a is a potential arc wrt flow from origin o, where k = findfirst(x -> (x == o), O)
+Identfies if arc `a` on graph `G` is a potential arc wrt flow from origin `o`
+"""
 function ispotential(a::Arc, o::Origin, G::Graph)
     k = o.k
     xʳₐ = a.xʳ[k]
@@ -154,13 +177,13 @@ function ispotential(a::Arc, o::Origin, G::Graph)
 
     t = a.t
     pᵣₜ = path(G, o, t)
-    uʳₕ = 0.0
-    for a in pᵣₜ uʳₕ += a.c end
+    uʳₜ = 0.0
+    for a in pᵣₜ uʳₜ += a.c end
     
     h = a.h
     pᵣₕ = path(G, o, h)
-    uʳₜ = 0.0
-    for a in pᵣₕ uʳₜ += a.c end
+    uʳₕ = 0.0
+    for a in pᵣₕ uʳₕ += a.c end
     
     πʳₐ = uʳₜ + cₜₕ - uʳₕ 
 
@@ -169,133 +192,138 @@ function ispotential(a::Arc, o::Origin, G::Graph)
     return bool
 end
 
-# Shifts flows from higher cost segment to lower cost segment of PAS p 
-# on its assosciated origin rₒ, given cost difference is greater than λ
-function 𝝳(p::PAS)#, λ)
+"""
+    𝝳(p::PAS, λ)
+
+Evaluates amount of flow `δ` to shift on pas `p`.
+If `δ` is less than the threshold limit of `λ` then `δ` is assumed to be zero.
+"""
+function 𝝳(p::PAS, λ)
     e₁, e₂, o = p.e₁, p.e₂, p.o
-    k = o.k
-
-    f₁ = e₁.f[k]
-    c₁ = e₁.c
-    c₁′= e₁.c′
-
-    f₂ = e₂.f[k]
-    c₂ = e₂.c
-    c₂′= e₂.c′
-
-    #if abs(c₂ - c₁) < λ return 0.0 end
+    
+    f₁, f₂ = fₑ(e₁, o), fₑ(e₂, o)
+    c₁, c₂ = cₑ(e₁), cₑ(e₂)
+    c₁′, c₂′ = cₑ′(e₁), cₑ′(e₂)
     
     Δ = (c₂ - c₁)/(c₁′ + c₂′)
+    
+    if abs(c₂ - c₁) < λ δ = 0.0 end
     if isnan(Δ) δ = 0.0
     elseif Δ ≥ 0 δ = min(Δ, f₂)
     else δ = max(Δ, -f₁) end
-    
+
     return δ
 end
 
-function shift(p::PAS, δ)
-    # TODO: Adjust cost vals for assingnment
+"""
+    shift(p::PAS, δ, ϕ)
 
+Shifts flow `δ` on pas `p`.
+Argument `ϕ` determines if the arc costs need to be updated for UE or SO assignment. 
+"""
+function shift(p::PAS, δ)
     e₁, e₂, o = p.e₁, p.e₂, p.o
     k = o.k
     
-    f, c, c′ = Inf, 0.0, 0.0
-    for a in e₁.s
+    for a in e₁
         a.xʳ[k] += δ
-        a.x += δ
         a.c = cₐ(a)
-
-        if a.xʳ[k] < f f = a.xʳ[k] end
-        c += a.c
-        c′+= cₐ′(a)
+        a.c′= cₐ′(a)
     end
-    e₁.f[k], e₁.c, e₁.c′ = f, c, c′
-    
-    f, c, c′ = Inf, 0.0, 0.0
-    for a in e₂.s
-        a.xʳ[k] += δ
-        a.x += δ
+
+    for a in e₂
+        a.xʳ[k] -= δ
         a.c = cₐ(a)
-
-        if a.xʳ[k] < f f = a.xʳ[k] end
-        c += a.c
-        c′+= cₐ′(a)
+        a.c′= cₐ′(a)
     end
-    e₂.f[k], e₂.c, e₂.c′ = f, c, c′
     
     return
 end
 
+"""
+    MCS(a::Arc, o::Origin, G::Graph)
 
-# PAS identification for arc a wrt origin r using Maximum Cost Search
+Develops pas for arc `a` wrt origin `o` using Maximum Cost Search method
+"""
 function MCS(a::Arc, o::Origin, G::Graph)
     depth, maxdepth = 1, 2
-    flag = true
-
-    N, A = G.N, G.A
-
-    L₁ = o.Lᵖ
-    t, h = a.t, a.h
-    i, j = t.v, h.v
-    e₁, e₂ = Segment(Arc[], Inf, 0.0, 0.0), Segment(Arc[], Inf, 0.0, 0.0)
-    p = PAS(e₁, e₂, o)
-
-    pᵣⱼ = path(G, L₁, r, j)
-
-    while flag
+    
+    i, j = a.t.v, a.h.v
+    r, L₁ = o.n, o.Lᵖ
+    N, A, K = G.N, G.A, G.K
+    
+    pᵣₕ = path(G, L₁, r, a.h)
+    
+    s = 1
+    p = PAS(Arc[], Arc[], o)
+    
+    
+    while depth ≤ maxdepth
         # Intialize
         l = zeros(Int64, length(N))
-        for a in pᵣⱼ l[a.t] = -1 end
+        for a in pᵣₕ l[a.t.v] = -1 end
         l[i] = 1
         l[j] = 1
 
-        L₂ = Vector{Node}(undef, length(N))
-        L₂[j] = t 
-
-
+        L₂ = Vector{Int64}(undef, length(N))
+        L₂[j] = K[i,j]
+        
         # Iterate
-        v = i
+        t, h = a.t, a.h
         while true
+            h = t
             
+            # Maximum Cost Search
             f = 0.0
-            for u in N[v].T 
-                k = findfirst(x -> (x == N[v].v), N[u].H)::Int64
-                x = xʳₐ[r][u][k]
-                k = K[u,v]
-                a = A[k]
-                c = a.c
-                if x > 1e-12 && c > f f, t = c, p end
+            for n in h.T 
+                k = K[n,h.v]
+                x = A[k].xʳ[o.k]
+                c = A[k].c
+                if x > 1e-12 && c > f 
+                    f = c
+                    t = N[n]
+                    L₂[h.v] = k
+                end
             end
-            L₂[v] = N[u]
-            v = u   
             
             # PAS found
-            if l[v] == -1      
-                s₁ = path(G, L₁, t, j)
-                s₂ = path(G, L₂, t, j)
-                shift(p, 𝝳(p))
-                bool,_ = ispotential(a, o, G)
-                if !bool || depth == maxdepth flag = false
-                else depth += 1 end
-                break
-            # Cycle found
-            elseif l[v] == 1
-                if depth == maxdepth flag = false
+            if l[t.v] == -1    
+                e₁ = path(G, L₁, t, a.h)
+                e₂ = path(G, L₂, t, a.h)
+ 
+                s = l[t.v]
+                p = PAS(e₁, e₂, o)
+
+                δ = 𝝳(p, 0.0)
+                shift(p, δ)
+                bool = ispotential(a, o, G)
+                if !bool
+                    return s, p
                 else
+                    depth += 1
+                    break
+                end
+            # Cycle found
+            elseif l[t.v] == 1
+                if depth < maxdepth
                     pₕₜ = path(G, L₂, h, t)
-                    push!(pₕₜ, a)   
+                    if h != t push!(pₕₜ, A[K[t.v, h.v]]) end
                     δ = Inf
                     k = o.k
                     for a in pₕₜ if a.xʳ[k] ≤ δ δ = a.xʳ[k] end end
-                    shift(PAS(pₕₜ , Int64[], o), δ)
-                    depth += 1
+                    for a in pₕₜ 
+                        a.xʳ[k] -= δ
+                        a.c = cₐ(a)
+                        a.c′= cₐ′(a)
+                    end
                 end
+                depth += 1
                 break
             # Continue
-            else l[v] = 1
+            else l[t.v] = 1
             end
         end
     end
 
-    return p
+    return s, p
 end

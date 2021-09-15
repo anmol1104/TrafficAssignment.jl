@@ -1,15 +1,16 @@
 """
-    build(network)
+    build(network, assignment)
 
-Returns network as a graph of nodes, arcs, and relevant properties
+Returns network as a graph with nodes, arcs, and relevant properties, for `:UE` or `:SO` assignment
 """
-function build(network)
+function build(network, assignment)
     #= ────────────────────────────────────────────────────────────────────────────────
     # NOTE: 
         Node values must match node location (index) in the set of nodes N. This 
         requires node values to start from 1 increasing linearly to the maximum value.
     ──────────────────────────────────────────────────────────────────────────────── =#
 
+    ϕ = assignment == :UE ? false : true
 
     # network file
     ntwkfile = joinpath(@__DIR__, "Network\\$network\\network.csv")
@@ -48,7 +49,7 @@ function build(network)
 
     # Arcs
     A = Vector{Arc}(undef, nrow(df₁))  
-    xʳ= Vector{Float64}(undef, nrow(df₂))
+    xʳ= zeros(nrow(df₂))
     for row in 1:nrow(df₁)
         i, j = tail[row], head[row]
         t, h = N[i], N[j]
@@ -57,7 +58,7 @@ function build(network)
         tₒ= linkfft[row]
         α = alpha[row]
         β = beta[row]
-        a = Arc(t, h, V, d, tₒ, α, β, copy(xʳ), 0.0)
+        a = Arc(t, h, V, d, tₒ, α, β, copy(xʳ), 0.0, 0.0, ϕ)
         A[row] = a
     end
 

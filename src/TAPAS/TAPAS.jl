@@ -32,19 +32,13 @@ mutable struct Arc
     β::Float64                              # BPR parameter
     xʳ::Vector{Float64}                     # Origin based arc flow
     c::Float64                              # Arc cost
-end
-# TODO: Add c' to arc struct ?
-
-mutable struct Segment
-    s::Vector{Arc}                          # Segment
-    f::Vector{Float64}                      # Minimum origin-based flow on the segment
-    c::Float64                              # Sum of arc cost on the segment
-    c′::Float64                             # Sum of derivative of arc cost on the segment
+    c′::Float64                             # Arc cost derivative
+    ϕ::Bool                                 # Assignment boolean (UE => ϕ = false; SO => ϕ = true)
 end
 
 struct PAS
-    e₁::Segment                             # First segment
-    e₂::Segment                             # Second segment
+    e₁::Vector{Arc}                         # First segment
+    e₂::Vector{Arc}                         # Second segment
     o::Origin                               # Assosciated origin
 end
 
@@ -56,6 +50,11 @@ struct Graph
     O::Vector{Origin}                       # Vector of origins
 end
 
+function Base.:∈(pₒ::PAS, P::Vector{PAS})
+    for p in P if pₒ.e₁ == p.e₁ && pₒ.e₂ == p.e₂ return true end end
+    return false
+end
+Base.:∉(pₒ::PAS, P::Vector{PAS}) = !(Base.:∈(pₒ, P))
 
 include("build.jl")
 include("func.jl")
