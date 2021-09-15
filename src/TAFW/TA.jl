@@ -36,7 +36,7 @@ function FW(G::Graph, tol, maxiters, maxruntime, log)
     # Intializate
     tₒ = now() 
     n = 0
-    for a in A a.c = cₐ(a) + ϕ * a.x * cₐ′(a) end
+    for a in A a.c = cₐ(a) end
     for (i,o) in enumerate(O)
         r = o.n
         Lᵖ[i] = djk(G, o)
@@ -46,7 +46,7 @@ function FW(G::Graph, tol, maxiters, maxruntime, log)
             pᵣₛ = path(G, L, r, s)
             for a in pᵣₛ
                 a.x += qᵣₛ
-                a.c = cₐ(a) + ϕ * a.x * cₐ′(a)
+                a.c = cₐ(a)
             end
         end
     end
@@ -120,7 +120,7 @@ function FW(G::Graph, tol, maxiters, maxruntime, log)
             v = 0.0
             for (k,a) in enumerate(A) 
                 x = a.x + α * d[k]
-                v += (cₐ(a, x) + ϕ * x * cₐ′(a, x)) * d[k] 
+                v += cₐ(a, x) * d[k] 
             end
             if v < 0.0 l = α
             elseif v > 0.0 u = α
@@ -132,7 +132,7 @@ function FW(G::Graph, tol, maxiters, maxruntime, log)
         # Update
         for (k,a) in enumerate(A) 
             a.x += α * d[k]
-            a.c = cₐ(a) + ϕ * a.x * cₐ′(a)
+            a.c = cₐ(a)
         end
         Y[n] = deepcopy(y)
         P[n] = deepcopy(p)
@@ -193,7 +193,7 @@ function fukushimaFW(G::Graph, tol, maxiters, maxruntime, log)
     # Intialize
     tₒ = now() 
     n = 0
-    for a in A a.c = cₐ(a) + ϕ * a.x * cₐ′(a) end
+    for a in A a.c = cₐ(a) end
     for (i,o) in enumerate(O)
         r = o.n
         Lᵖ[i] = djk(G,o)
@@ -203,7 +203,7 @@ function fukushimaFW(G::Graph, tol, maxiters, maxruntime, log)
             pᵣₛ = path(G, L, r, s)
             for a in pᵣₛ
                 a.x += qᵣₛ
-                a.c = cₐ(a) + ϕ * a.x * cₐ′(a)
+                a.c = cₐ(a)
             end
         end
     end
@@ -280,7 +280,7 @@ function fukushimaFW(G::Graph, tol, maxiters, maxruntime, log)
             v = 0.0
             for (k,a) in enumerate(A) 
                 x = a.x + α * d[k]
-                v += (cₐ(a, x) + ϕ * x * cₐ′(a, x)) * d[k] 
+                v += cₐ(a, x) * d[k] 
             end            
             if v < 0.0 l = α
             elseif v > 0.0 u = α
@@ -292,7 +292,7 @@ function fukushimaFW(G::Graph, tol, maxiters, maxruntime, log)
         # Update
         for (k,a) in enumerate(A) 
             a.x += α * d[k]
-            a.c = cₐ(a) + ϕ * a.x * cₐ′(a)
+            a.c = cₐ(a)
         end
         Y[n] = deepcopy(y)
         P[n] = deepcopy(p)
@@ -304,7 +304,7 @@ function fukushimaFW(G::Graph, tol, maxiters, maxruntime, log)
     end
 
     assignment = A[begin].ϕ == false ? :UE : :SO
-    
+
     metadata =  "MetaData
     Network     => $(G.name)
     assignment  => $(String(assignment))
@@ -449,7 +449,7 @@ function conjugateFW(G::Graph, tol, maxiters, maxruntime, log)
             v = 0.0
             for (k,a) in enumerate(A) 
                 x = a.x + α * d[k]
-                v += (cₐ(a, x) + ϕ * x * cₐ′(a, x)) * d[k] 
+                v += cₐ(a, x) * d[k] 
             end
             if v < 0.0 l = α
             elseif v > 0.0 u = α
@@ -461,7 +461,7 @@ function conjugateFW(G::Graph, tol, maxiters, maxruntime, log)
         # Update
         for (k,a) in enumerate(A) 
             a.x += α * d[k]
-            a.c = cₐ(a) + ϕ * a.x * cₐ′(a)
+            a.c = cₐ(a)
         end
         Y[n] = deepcopy(y)
         P[n] = deepcopy(p)

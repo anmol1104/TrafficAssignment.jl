@@ -5,7 +5,7 @@
 
 Returns arc cost for arc `a` for arc flow `x`
 """
-function cₐ(a::Arc, x=sum(a.xʳ))
+function cₐ(a::Arc, x=a.x)
     tₒ= a.tₒ
     α = a.α
     β = a.β
@@ -24,7 +24,7 @@ end
 
 Returns first derivative of arc cost wrt arc flow for arc `a` at arc flow `x`
 """
-function cₐ′(a::Arc, x=sum(a.xʳ))
+function cₐ′(a::Arc, x=a.x)
     tₒ= a.tₒ
     α = a.α
     β = a.β
